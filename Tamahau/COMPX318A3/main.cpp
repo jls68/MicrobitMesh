@@ -48,7 +48,7 @@ void onButtonA(MicroBitEvent)
 	then it displays at position 0.
     */
     //if(xReset == 0) { x = x + 1; } else { xReset = 0; }
-    y = y + 1;
+    x = x + 1;
     //Checks to see if the integer is within the range of lights
     if(x <= 4)
     {
@@ -59,7 +59,11 @@ void onButtonA(MicroBitEvent)
     /*
 	Otherwise sets it to 0 (reset) and ensure a reset variable is there to access the 		start light
     */
-    else { x = 0; xReset = 1; }
+    else { 
+	x = 0; 
+	MicroBitImage i("1,0,0,0,0\n");
+	uBit.display.print(i, x, y); 
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +92,11 @@ void onButtonB(MicroBitEvent)
     /*
 	Otherwise sets it to 0 (reset) and ensure a reset variable is there to access the 		start light
     */
-    else { y = 0; yReset = 1;}
+       else { 
+	y = 0; 
+	MicroBitImage i("1,0,0,0,0\n");
+	uBit.display.print(i, x, y); 
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
