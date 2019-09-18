@@ -126,13 +126,6 @@ int main()
      accX = adjustMag(accX);
      accY = adjustMag(accY);
      accZ = adjustMag(accZ);
-     
-     if (accZ >= 128){
-      accZ = -(32768 * 2 - accZ) / magnitude
-     }
-     else{
-      accZ /= magnitude
-     }
 
       // Create message
       *((int *)buffer) = accX;
