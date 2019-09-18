@@ -8,11 +8,15 @@ MicroBit uBit;
  
 uint8_t radioGroup = 24;
 uint8_t buffer[10];
-int locX = 0;
-int locY = 0;
+
+int magnitude = 3;
+
 int accX = 0;
 int accY = 0;
 int accZ = 0;
+int locX = 0;
+int locY = 0;
+
 bool setLocation= true;
 
 ManagedString rxdata;
@@ -106,20 +110,44 @@ int main()
       accX = uBit.accelerometer.getX();
       accY = uBit.accelerometer.getY();
       accZ = uBit.accelerometer.getZ();
+     
+     // Adjust magnitude of accelerometer readings and adjust for negative readings
+     if (accX >= 128){
+      accX = -(32768 * 2 - accX) / magnitude
+     }
+     else{
+      accX /= magnitude
+     }
+     
+     if (accY >= 128){
+      accY = -(32768 * 2 - accY) / magnitude
+     }
+     else{
+      accY /= magnitude
+     }
+     
+     if (accZ >= 128){
+      accZ = -(32768 * 2 - accZ) / magnitude
+     }
+     else{
+      accZ /= magnitude
+     }
 
       // Create message
       *((int *)buffer) = accX;
       *((int *)buffer+2) = accY;
       *((int *)buffer+4) = accZ;
       *((int *)buffer+6) = locX;
-      *((int *)buffer+7) = locY;
+      *((int *)buffer+8) = locY;
+      *((int *)buffer+10) = 0; // For keeping data in phase check for 0x00
 
       // Send message
-      uBit.serial.send(buffer,8);
+      uBit.serial.send(buffer,12);
       //uBit.radio.datagram.send(buffer);
       
-      // Wait 5 seconds
-      uBit.sleep(5000);
+      // Node bits will transmit data every 5 seconds but the serial connection will timeout before then so
+      // Wait 2.5 seconds to transmit data over serial to computer
+      uBit.sleep(2500);
     }
     
     release_fiber();
