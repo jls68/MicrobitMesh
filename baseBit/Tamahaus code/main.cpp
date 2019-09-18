@@ -103,23 +103,24 @@ int main()
     // Start trasmitting every 5 seconds
     for (;;) {
       // Get accerlerometer data
-      accX = uBit.accelerometer.getX();
-      accY = uBit.accelerometer.getY();
-      accZ = uBit.accelerometer.getZ();
+	accX = uBit.accelerometer.getX();
+	accY = uBit.accelerometer.getY();
+	accZ = uBit.accelerometer.getZ();
 
-      // Create message
-      *((int *)buffer) = accX;
-      *((int *)buffer+2) = accY;
-      *((int *)buffer+4) = accZ;
-      *((int *)buffer+6) = locX;
-      *((int *)buffer+7) = locY;
+	//TODO: Get location (from base station)
+	*((int *)buffer) = accX;
+	*((int *)(buffer+2)) = accY;
+	*((int *)(buffer+4)) = accZ;
+	*((int *)buffer+6) = locX;
+        *((int *)buffer+8) = locY;
+	//uBit.serial.send(buffer, 10);
 
       // Send message
-      uBit.serial.send(buffer,8);
+      uBit.serial.send(buffer,12);
       //uBit.radio.datagram.send(buffer);
       
       // Wait 5 seconds
-      uBit.sleep(5000);
+      uBit.sleep(1000);
     }
     
     release_fiber();
