@@ -145,7 +145,15 @@ int main()
     
 	for (;;) {
         uBit.sleep(1000);
-        uBit.radio.datagram.send("T");
+	uBit.radio.datagram.send("T");
+	int x = uBit.accelerometer.getX();
+	int y = uBit.accelerometer.getY();
+	int z = uBit.accelerometer.getZ();
+	//TODO: Get location (from base station)
+	*((int *)buffer) = x;
+	*((int *)(buffer+2)) = y;
+	*((int *)(buffer+4)) = z;
+	uBit.serial.send(buffer, 8);
         //Setup a handler to run when data is received.
         uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
 	}
