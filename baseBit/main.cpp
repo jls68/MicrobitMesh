@@ -71,6 +71,17 @@ void onButtonAlong(MicroBitEvent)
     setLocation = false;
 }
 
+int adjustMag(value)
+{
+ if (value >= 128){
+  value = -(32768 * 2 - Value) / magnitude;
+ }
+ else{
+  value /= magnitude;
+ }
+ return value;
+}
+
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -112,19 +123,9 @@ int main()
       accZ = uBit.accelerometer.getZ();
      
      // Adjust magnitude of accelerometer readings and adjust for negative readings
-     if (accX >= 128){
-      accX = -(32768 * 2 - accX) / magnitude
-     }
-     else{
-      accX /= magnitude
-     }
-     
-     if (accY >= 128){
-      accY = -(32768 * 2 - accY) / magnitude
-     }
-     else{
-      accY /= magnitude
-     }
+     accX = adjustMag(accX);
+     accY = adjustMag(accY);
+     accZ = adjustMag(accZ);
      
      if (accZ >= 128){
       accZ = -(32768 * 2 - accZ) / magnitude
