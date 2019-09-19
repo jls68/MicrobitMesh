@@ -5,19 +5,14 @@
 // Tamahau Brown	  ID: 1314934
 
 MicroBit uBit;
- 
+
 uint8_t radioGroup = 24;
 uint8_t buffer[10];
-
-int magnitude = 3;
-int aveMovement = 0;
-
+int locX = 0;
+int locY = 0;
 int accX = 0;
 int accY = 0;
 int accZ = 0;
-int locX = 0;
-int locY = 0;
-
 bool setLocation= true;
 
 ManagedString rxdata;
@@ -30,7 +25,7 @@ void onData(MicroBitEvent)
     // Receive data into string
     ManagedString rxdata = uBit.radio.datagram.recv();
     uBit.display.scroll(rxdata);
-    
+
     // Receive data into byte array buffer and display length
     //int rxlength = uBit.radio.datagram.recv(buffer, 30);
     //uBit.display.scroll(rxlength);
@@ -72,17 +67,6 @@ void onButtonAlong(MicroBitEvent)
     setLocation = false;
 }
 
-int adjustMag(int value)
-{
- if (value >= 128){
-  value = -(32768 * 2 - value) / magnitude;
- }
- else{
-  value /= magnitude;
- }
- return value;
-}
-
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -93,11 +77,11 @@ int main()
 
     //Setup a handler to run when data is received.
     uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
-    
+
     // Setup some button handlers to allow extra control with buttons.
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
-    
+
     // Some other button handler options that you may find useful
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_LONG_CLICK, onButtonAlong);
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_LONG_CLICK, onButtonBlong);
@@ -111,12 +95,10 @@ int main()
       uBit.sleep(1000);
     }
 
-    
+
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);
-    uBit.display.scroll("go");
-    // Switch to Display location input
-    uBit.display.print(i, locX, locY);
+    uBit.display.print("+");
 
     // Start trasmitting every 5 seconds
     for (;;) {
@@ -125,36 +107,21 @@ int main()
       accY = uBit.accelerometer.getY();
       accZ = uBit.accelerometer.getZ();
      
-     // Adjust magnitude of accelerometer readings and adjust for negative readings
-     accX = adjustMag(accX);
-     accY = adjustMag(accY);
-     accZ = adjustMag(accZ);
+      // get average movement
+      ave = sqrt(accX*accX + accY*accY + accZ*accZ);
 
-     aveMovement = sqrt(accX * accX + accY * accY + accZ * accZ);
-     
-     /*
       // Create message
-      *((int *)buffer) = accX;
-      *((int *)buffer+2) = accY;
-      *((int *)buffer+4) = accZ;
-      *((int *)buffer+6) = locX;
-      *((int *)buffer+8) = locY;
-      *((int *)buffer+10) = 0; // For keeping data in phase check for 0x00
-      */
-     
-      *((int *)buffer) = 0x80; // For keeping data in phase
-      *((int *)buffer+2) = locX;
-      *((int *)buffer+4) = locY;
-      *((int *)buffer+6) = aveMovement;
-     
+      *((int *)buffer) = 0;
+      *((int *)buffer+2) = ave;
+      *((int *)buffer+4) = locY * 256 + locX;
+
       // Send message
-      uBit.serial.send(buffer,8);
+      uBit.serial.send(buffer,6);
       //uBit.radio.datagram.send(buffer);
-      
-      // Node bits will transmit data every 5 seconds but the serial connection will timeout before then so
-      // Wait 2.5 seconds to transmit data over serial to computer
-      uBit.sleep(2500);
+
+      // Wait 5 seconds
+      uBit.sleep(1000);
     }
-    
+
     release_fiber();
 }
