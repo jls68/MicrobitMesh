@@ -26,6 +26,7 @@ posy = 0
 posFail = 0
 lastRead = 0
 magVal = 0
+modu = 8
 '''
 pos1 = 0x54
 pos2 = 0x41
@@ -58,15 +59,15 @@ ab.append(pos11)
 ab.append(pos12)
 '''
 while (True):
-  xy = ser.read(6)
+  xy = ser.read(modu)
   #xy = ab
   print(xy)
-  if (xy.__len__() == 6):
+  if (xy.__len__() == modu):
    #While it has not found an empty value
    while(posFail != 1):
      #Keeps iterating if there is no empty value
      if(xy[pos] == 0x80):
-       pos = (pos + 1) % 6
+       pos = (pos + 1) % modu
        if(lastRead == 1):
          posFail = 1
        lastRead = 1
@@ -74,12 +75,12 @@ while (True):
      #Otherwise is not 0x80
      else:
        lastRead = 0
-       pos = (pos + 1) % 6
+       pos = (pos + 1) % modu
 
-   pos = pos % 6
-   posy = (pos + 1) % 6
-   locX = xy[(pos + 2)%6] 
-   locY = xy[(pos + 3)%6] 
+   pos = pos % 8
+   posy = (pos + 1) % modu
+   locX = xy[(pos + 2)%modu] 
+   locY = xy[(pos + 3)%modu] 
    if (xy[posy] >= 128):
      newsx = -(32768 * 2 - (xy[posy] * 256 + xy[pos])) / 3
    else:
