@@ -1,4 +1,5 @@
 import serial
+import math
 import tkinter # The python tcl/tk ui construction api
 top = tkinter.Tk() # The tcl/tk object
 canvas = tkinter.Canvas(top,bg="bisque",height=800,width=800)
@@ -24,28 +25,47 @@ posy = 0
 #zeroXeightys = [10, 10]
 posFail = 0
 lastRead = 0
-
+magVal = 0
 '''
+pos1 = 0x54
+pos2 = 0x41
+pos3 = 0x4D
+pos4 = 0x41
+pos5 = 0x48
+pos6 = 0x41
+pos7 = 0x55
+pos8 = 0x80
+pos9 = 0x80
+pos10 = 0x00
+pos11 = 0xff
+pos12 = 0xff
+
 ab = bytearray()
-ab.append(0x54)
-ab.append(0x41)
-ab.append(0x4D)
-ab.append(0x41)
-ab.append(0x48)
-ab.append(0x41)
-ab.append(0x55)
-ab.append(0x80)
-ab.append(0x80)
-ab.append(0x80)
+
+ab.append(pos1)
+ab.append(pos2)
+ab.append(pos3)
+ab.append(pos4)
+
+ab.append(pos5)
+ab.append(pos6)
+ab.append(pos7)
+ab.append(pos8)
+
+ab.append(pos9)
+ab.append(pos10)
+ab.append(pos11)
+ab.append(pos12)
 '''
 while (True):
   xy = ser.read(12)
-  print(xy);
+  #xy = ab
+  print(xy)
   if (xy.__len__() == 12):
    #While it has not found an empty value
    while(posFail != 1):
      #Keeps iterating if there is no empty value
-     if(xy[pos] == 0xff):
+     if(xy[pos] == 0x00):
        pos = (pos + 1) % 12
        if(lastRead == 1):
          posFail = 1
@@ -73,18 +93,22 @@ while (True):
    else:
      newsz = (xy[(posy+4)%12] * 256 + xy[(pos+4)%12]) / 3
 
-   #print(newsy, end=" ", flush=True)
-   #print(newsx, end=" ", flush=True)
-   #print(newsz, end=" ", flush=True)
+   print(newsy, end=" ", flush=True)
+   print(newsx, end=" ", flush=True)
+   print(newsz, end=" ", flush=True)
 
    print("\nX position: " + str(newsx))
    print("Y position " + str(newsy))
    print("Z position: " + str(newsz))
 
    #TODO: Get magnitude of the accelerometers and display the data on the graph as one. To discuss
-   mag = (x * x + y * y + z * z)
+   mag = math.sqrt(newsx * newsx + newsy * newsy + newsz * newsz)
+   #print(mag)
+
+   canvas.create_line(sx, 400+mag/100, sx+1, 400+magVal/100, fill="blue")
 
    sx = sx + 1
+   magVal = mag
    sz = newsx
    sy = newsy
    ay = newsz
