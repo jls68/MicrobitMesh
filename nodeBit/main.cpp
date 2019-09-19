@@ -11,6 +11,7 @@ uint8_t sendToRadioGroup = 0;
 uint8_t listenerRadioGrouop = whoRadioGroup;
 int size = 12;
 uint8_t buffer[16];
+uint8_t whoSend[16];
 int locX = 0;
 int locY = 0;
 int accX = 0;
@@ -19,7 +20,7 @@ int accZ = 0;
 int ave = 0;
 int county = 0;
 bool setLocation= true;
-bool who= false;
+bool who = false;
 
 MicroBitImage i("1,0,0,0,0\n"); 
 MicroBitImage clear("0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n"); 
@@ -43,7 +44,11 @@ void onData(MicroBitEvent)
   // Check checksum
   if((rxdata[8] == 0x11 && rxdata[9] == 0x11 &&
       rxdata[10] == 0x11 && rxdata[11] == 0x11)/* | true*/){
-    if(who == false && rxdata[1] == 0x54 && rxdata[0] == 0x1){
+    if(rxdata[1] == 0x54 && rxdata[0] == 0x01){
+      if(who == true){
+	uBit.display.scroll("2ndWho");
+	return;
+      }
       
       who = true;
       uBit.display.scroll("who");
@@ -54,19 +59,23 @@ void onData(MicroBitEvent)
       listenerRadioGrouop = sendToRadioGroup + 1;
       
       //Sends its own who broadcast
-      *((int *)rxdata) = 0x54 * 256 + 0x1;
-      *((int *)(rxdata+2)) = listenerRadioGrouop;
-      *((int *)(rxdata+8)) = 0x11 * 256 + 0x11;
-      *((int *)(rxdata+10)) = 0x11 * 256 + 0x11;
-      
+      *((int *)whoSend) = 0x54 * 256 + 0x01;
+      *((int *)(whoSend+2)) = listenerRadioGrouop;
+      *((int *)(whoSend+4)) = listenerRadioGrouop;
+      *((int *)(whoSend+6)) = listenerRadioGrouop;
+      *((int *)(whoSend+8)) = 0x11 * 256 + 0x11;
+      *((int *)(whoSend+10)) = 0x11 * 256 + 0x11;
+
+      uBit.display.scroll("hey");
       // Set radiogroup to match recieved who radio group
-      uBit.radio.setGroup(whoRadioGroup);
+      //uBit.radio.setGroup(whoRadioGroup);
     
       // Pass on the message
-      uBit.radio.datagram.send(rxdata, size);
+      uBit.radio.datagram.send(whoSend, size);
     
       // Set radiogroup back
       uBit.radio.setGroup(listenerRadioGrouop);
+      uBit.display.scroll("who");
     }
     else {
       uBit.display.scroll("X");
@@ -169,12 +178,12 @@ int main()
 	accZ = uBit.accelerometer.getZ();
 	ave = ave + sqrt(accX*accX + accY*accY + accZ*accZ);
       
-      // Wait 0.1 seconds
-      uBit.sleep(100);
+      // Wait 0.5 seconds
+      uBit.sleep(500);
 
-      // Every 5 seconds (50 0.1 second waits) send average movement
+      // Every 5 seconds (10 0.5 second waits) send average movement
       county = county + 1;
-      if (county >= 50){
+      if (county >= 1){
 	ave = ave / county;
 	*((int *)buffer) = 0x80 * 256 + 0x80;
 	*((int *)(buffer+2)) = ave;
@@ -189,6 +198,8 @@ int main()
   
 	  // Pass on the message
 	  uBit.radio.datagram.send(buffer, size);
+
+	  uBit.display.scroll("sent");
 
 	  // Set radiogroup back
 	  uBit.radio.setGroup(listenerRadioGrouop);
