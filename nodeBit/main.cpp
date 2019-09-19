@@ -55,9 +55,9 @@ void onData(MicroBitEvent)
       
       //Sends its own who broadcast
       *((int *)rxdata) = 0x54 * 256 + 0x1;
-      *((int *)rxdata+2) = listenerRadioGrouop;
-      *((int *)rxdata+8) = 0x11 * 256 + 0x11;
-      *((int *)rxdata+10) = 0x11 * 256 + 0x11;
+      *((int *)(rxdata+2)) = listenerRadioGrouop;
+      *((int *)(rxdata+8)) = 0x11 * 256 + 0x11;
+      *((int *)(rxdata+10)) = 0x11 * 256 + 0x11;
       
       // Set radiogroup to match recieved who radio group
       uBit.radio.setGroup(whoRadioGroup);
@@ -180,8 +180,8 @@ int main()
 	*((int *)(buffer+2)) = ave;
 	*((int *)(buffer+4)) = locY * 256 + locX;
 	*((int *)(buffer+6)) = listenerRadioGrouop;
-	*((int *)buffer+8) = 0x72 * 256 + 0x71;
-	*((int *)buffer+10) = 0x70 * 256 + 0x60;
+	*((int *)(buffer+8)) = 0x72 * 256 + 0x71;
+      *((int *)(buffer+10)) = 0x70 * 256 + 0x60;
 
 	if (who == true){
 	  // Set radiogroup to match recieved who radio group
