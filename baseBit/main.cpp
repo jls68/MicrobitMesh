@@ -10,6 +10,7 @@ uint8_t radioGroup = 24;
 uint8_t buffer[10];
 
 int magnitude = 3;
+int aveMovement = 0;
 
 int accX = 0;
 int accY = 0;
@@ -71,10 +72,10 @@ void onButtonAlong(MicroBitEvent)
     setLocation = false;
 }
 
-int adjustMag(value)
+int adjustMag(int value)
 {
  if (value >= 128){
-  value = -(32768 * 2 - Value) / magnitude;
+  value = -(32768 * 2 - value) / magnitude;
  }
  else{
   value /= magnitude;
@@ -113,7 +114,9 @@ int main()
     
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);
-    uBit.display.print("+");
+    uBit.display.scroll("go");
+    // Switch to Display location input
+    uBit.display.print(i, locX, locY);
 
     // Start trasmitting every 5 seconds
     for (;;) {
@@ -127,6 +130,9 @@ int main()
      accY = adjustMag(accY);
      accZ = adjustMag(accZ);
 
+     aveMovement = sqrt(accX * accX + accY * accY + accZ * accZ);
+     
+     /*
       // Create message
       *((int *)buffer) = accX;
       *((int *)buffer+2) = accY;
@@ -134,9 +140,15 @@ int main()
       *((int *)buffer+6) = locX;
       *((int *)buffer+8) = locY;
       *((int *)buffer+10) = 0; // For keeping data in phase check for 0x00
-
+      */
+     
+      *((int *)buffer) = 0x80; // For keeping data in phase
+      *((int *)buffer+2) = locX;
+      *((int *)buffer+4) = locY;
+      *((int *)buffer+6) = aveMovement;
+     
       // Send message
-      uBit.serial.send(buffer,12);
+      uBit.serial.send(buffer,8);
       //uBit.radio.datagram.send(buffer);
       
       // Node bits will transmit data every 5 seconds but the serial connection will timeout before then so
