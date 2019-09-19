@@ -1,13 +1,20 @@
 #include "MicroBit.h"
 
+// Base station
+// James Sheaf-Morrison   ID: 1314151
+// Tamahau Brown	  ID: 1314934
+
 MicroBit uBit;
  
 uint8_t radioGroup = 24;
-uint8_t buffer[30];
-int x = 0;
-int y = 0;
+uint8_t buffer[10];
+int locX = 0;
+int locY = 0;
+int accX = 0;
+int accY = 0;
+int accZ = 0;
+int ave = 0;
 bool setLocation= true;
-char locText[] = "x,y";
 
 ManagedString rxdata;
 
@@ -25,32 +32,32 @@ void onData(MicroBitEvent)
     //uBit.display.scroll(rxlength);
 
     // Get receive signal strength
-    uint8_t radioRSSI = uBit.radio.getRSSI();
-    uBit.display.scroll(radioRSSI);
+    //uint8_t radioRSSI = uBit.radio.getRSSI();
+    //uBit.display.scroll(radioRSSI);
 }
 
-void onButtonA(MicroBitEvent)
+void setXonButtonA(MicroBitEvent)
 {
-    x++;
-    x %= 5;
+    locX++;
+    locX %= 5;
 }
 
-void onButtonB(MicroBitEvent)
+void setYonButtonB(MicroBitEvent)
 {
-    y++;
-    y %= 5;
+    locY++;
+    locY %= 5;
 }
 
 // Switched radio changing to long button clicks
 
-void onButtonARadio(MicroBitEvent)
+void onButtonARadioUp(MicroBitEvent)
 {
     radioGroup++;
     uBit.radio.setGroup(radioGroup);
     uBit.display.scroll(radioGroup);
 }
 
-void onButtonBRadio(MicroBitEvent)
+void onButtonBRadioDown(MicroBitEvent)
 {
     radioGroup--;
     uBit.radio.setGroup(radioGroup);
@@ -73,30 +80,50 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
     
     // Setup some button handlers to allow extra control with buttons.
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
     
     // Some other button handler options that you may find useful
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_LONG_CLICK, onButtonAlong);
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_LONG_CLICK, onButtonBlong);
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_HOLD, onButtonAhold);
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_DOUBLE_CLICK, onButtonAdouble);
-    
+
+    // Set location of microbit
     while (setLocation){
       uBit.display.print(clear);
-      uBit.display.print(i, x, y);
+      uBit.display.print(i, locX, locY);
       uBit.sleep(100);
     }
-    
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadio);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadio);
+
+	// Switch control of buttons A and B from location setting to radio group setting
+    uBit.messageBus.ignore(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
+    uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
+
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);
     uBit.display.print("+");
-    
+
+    // Start trasmitting
     for (;;) {
-        uBit.sleep(5000);
-	locText[0] = x + '0';
-	locText[2] = y + '0';
-        uBit.radio.datagram.send(locText);
+      // Get accerlerometer data
+	accX = uBit.accelerometer.getX();
+	accY = uBit.accelerometer.getY();
+	accZ = uBit.accelerometer.getZ();
+	ave = sqrt(accX*accX + accY*accY + accZ*accZ);
+	
+
+	//TODO: Get location (from base station)
+	*((int *)buffer) = 0x80 * 256 + 0x80;
+	*((int *)(buffer+2)) = ave;
+	*((int *)(buffer+4)) = locY * 256 + locX;
+
+      // Send message
+      uBit.serial.send(buffer,6);
+      //uBit.radio.datagram.send(buffer);
+      
+      // Wait 0.1 seconds
+      uBit.sleep(100);
     }
     
     release_fiber();

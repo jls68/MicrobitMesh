@@ -1,0 +1,5 @@
+#!/home/tmmb1/MircobitMesh/Python  Code/venv/bin/python3
+
+import yotta
+yotta.main()
+
