@@ -188,9 +188,9 @@ int main()
 	*((int *)buffer) = 0x80 * 256 + 0x80;
 	*((int *)(buffer+2)) = ave;
 	*((int *)(buffer+4)) = locY * 256 + locX;
-	*((int *)(buffer+6)) = listenerRadioGrouop;
-	*((int *)(buffer+8)) = 0x72 * 256 + 0x71;
-      *((int *)(buffer+10)) = 0x70 * 256 + 0x60;
+	*((int *)(buffer+6)) = listenerRadioGrouop; // This is sent to allow micorbits to see if they are listening on the same channels
+	*((int *)(buffer+8)) = 0x11 * 256 + 0x11;
+      *((int *)(buffer+10)) = 0x11 * 256 + 0x11;
 
 	if (who == true){
 	  // Set radiogroup to match recieved who radio group
