@@ -41,8 +41,8 @@ void onData(MicroBitEvent)
   //uBit.display.scroll(radioRSSI);
 
   // Check checksum
-  if((rxdata[8] == 0x11 && rxdata[9] == 0x11 /*&&
-      rxdata[10] == 0x11 && rxdata[11] == 0x11*/)/* | true*/){
+  if((rxdata[8] == 0x11 && rxdata[9] == 0x11 &&
+      rxdata[10] == 0x11 && rxdata[11] == 0x11)/* | true*/){
     if(who == false && rxdata[1] == 0x54 && rxdata[0] == 0x1){
       
       who = true;
@@ -174,7 +174,7 @@ int main()
 
       // Every 5 seconds (50 0.1 second waits) send average movement
       county = county + 1;
-      if (county >= 2){
+      if (county >= 50){
 	ave = ave / county;
 	*((int *)buffer) = 0x80 * 256 + 0x80;
 	*((int *)(buffer+2)) = ave;
