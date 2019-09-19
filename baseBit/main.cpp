@@ -24,18 +24,21 @@ MicroBitImage clear("0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n");
 
 void onData(MicroBitEvent)
 {
-    // Receive data into string
-    PacketBuffer rxdata = uBit.radio.datagram.recv();
-    uBit.display.scroll("X");
-    uBit.serial.send(rxdata);
+    if(allowConnection == true) {
+    	// Receive data into string
+    	PacketBuffer rxdata = uBit.radio.datagram.recv();
+    	uBit.display.scroll("X");
+    	uBit.serial.send(rxdata);
     
-    // Receive data into byte array buffer and display length
-    //int rxlength = uBit.radio.datagram.recv(buffer, 30);
-    //uBit.display.scroll(rxlength);
+    	// Receive data into byte array buffer and display length
+    	//int rxlength = uBit.radio.datagram.recv(buffer, 30);
+    	//uBit.display.scroll(rxlength);
 
-    // Get receive signal strength
-    //uint8_t radioRSSI = uBit.radio.getRSSI();
-    //uBit.display.scroll(radioRSSI);
+    	// Get receive signal strength
+    	//uint8_t radioRSSI = uBit.radio.getRSSI();
+    	//uBit.display.scroll(radioRSSI);
+    }
+    else {uBit.display.scroll("Y");}
 }
 
 void setXonButtonA(MicroBitEvent)
@@ -73,9 +76,16 @@ void onButtonAlong(MicroBitEvent)
 void onButtonBdouble(MicroBitEvent)
 {
 	if(allowConnection == false) {
-     		uBit.radio.datagram.send("who");
-		radioGroup = radioGroup+1;
-     		uBit.radio.setGroup(radioGroup);
+     		//uBit.radio.datagram.send("who");
+		//Sends the location from the buffer
+		*((int *)buffer) = 0x1 * 256 + 0x1;
+		*((int *)buffer+2) = radioGroup+1;
+		*((int *)buffer+4) = 0x72 * 256 + 0x71;
+		*((int *)buffer+4) = 0x70 * 256 + 0x60;
+		uBit.radio.datagram.send(buffer, 4);
+
+		//radioGroup = radioGroup+1;
+     		uBit.radio.setGroup(radioGroup+1);
 		uBit.display.scroll("who");
      		allowConnection = true;
 	}
@@ -89,9 +99,9 @@ int main()
     uBit.radio.setGroup(radioGroup);
     uBit.radio.setTransmitPower(1);
 
-    //Setup a handler to run when data is received.
-    uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
-    
+    	//Setup a handler to run when data is received.
+    	uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
+
     // Setup some button handlers to allow extra control with buttons.
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
@@ -120,11 +130,11 @@ int main()
 
     // Start trasmitting
     for (;;) {
-	if(allowConnection == true) {
+	//if(allowConnection == true) {
 		//Setup a handler to run when data is received.
-    		uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
-        }
-
+    		//uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
+        //}
+	/*
       	// Get accerlerometer data
 	accX = uBit.accelerometer.getX();
 	accY = uBit.accelerometer.getY();
@@ -140,7 +150,7 @@ int main()
       // Send message
       //uBit.serial.send(buffer,6);
       //uBit.radio.datagram.send(buffer);
-      
+      */
       // Wait 0.1 seconds
       uBit.sleep(100);
     }
