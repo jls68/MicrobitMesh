@@ -6,10 +6,11 @@
 
 MicroBit uBit;
  
-uint8_t whoRadioGroup = 24;
-uint8_t sendToRadioGroup = whoRadioGroup;
-uint8_t listenerRadioGrouop = whoRadioGroup + 1;
-uint8_t buffer[10];
+uint8_t whoRadioGroup = 29;
+uint8_t sendToRadioGroup = 0;
+uint8_t listenerRadioGrouop = whoRadioGroup;
+int size = 12;
+uint8_t buffer[16];
 int locX = 0;
 int locY = 0;
 int accX = 0;
@@ -20,68 +21,106 @@ int county = 0;
 bool setLocation= true;
 bool who= false;
 
-ManagedString rxdata;
-
 MicroBitImage i("1,0,0,0,0\n"); 
 MicroBitImage clear("0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n"); 
 
 void onData(MicroBitEvent)
 {
-    // Receive data into string
-    PacketBuffer rxdata = uBit.radio.datagram.recv();
-    uBit.display.scroll("X");
+    // Get recieved message into PacketBuffer
+
+  uint8_t rxdata[size+4];
+  int num = uBit.radio.datagram.recv(rxdata, size);
+  //PacketBuffer rxdata = uBit.radio.datagram.recv();
     
-    // Receive data into byte array buffer and display length
-    //int rxlength = uBit.radio.datagram.recv(buffer, 30);
-    //uBit.display.scroll(rxlength);
+  // Receive data into byte array buffer and display length
+  //int rxlength = uBit.radio.datagram.recv(buffer, 30);
+  //uBit.display.scroll(rxlength);
+  
+  // Get receive signal strength
+  //uint8_t radioRSSI = uBit.radio.getRSSI();
+  //uBit.display.scroll(radioRSSI);
 
-    // Get receive signal strength
-    uint8_t radioRSSI = uBit.radio.getRSSI();
-    uBit.display.scroll(radioRSSI);
-
-    if(who == false){
-      sendToRadioGroup = 24;
+  // Check checksum
+  if((rxdata[8] == 0x11 && rxdata[9] == 0x11 /*&&
+      rxdata[10] == 0x11 && rxdata[11] == 0x11*/)/* | true*/){
+    if(who == false && rxdata[1] == 0x54 && rxdata[0] == 0x1){
+      
       who = true;
-    }
-    else {
-      // Pass on recieved message
+      uBit.display.scroll("who");
+
+      num = rxdata[2];
+      uBit.display.scroll(num);
+      sendToRadioGroup = num;
+      listenerRadioGrouop = sendToRadioGroup + 1;
+      
+      //Sends its own who broadcast
+      *((int *)rxdata) = 0x54 * 256 + 0x1;
+      *((int *)rxdata+2) = listenerRadioGrouop;
+      *((int *)rxdata+8) = 0x11 * 256 + 0x11;
+      *((int *)rxdata+10) = 0x11 * 256 + 0x11;
+      
       // Set radiogroup to match recieved who radio group
-      uBit.radio.setGroup(sendToRadioGroup);
+      uBit.radio.setGroup(whoRadioGroup);
     
       // Pass on the message
-      uBit.radio.datagram.send(rxdata);
+      uBit.radio.datagram.send(rxdata, size);
+    
       // Set radiogroup back
       uBit.radio.setGroup(listenerRadioGrouop);
     }
+    else {
+      uBit.display.scroll("X");
+
+      if (who == true){
+	  // Set radiogroup to match recieved who radio group
+	  uBit.radio.setGroup(sendToRadioGroup);
+    
+	  // Pass on the message
+	  uBit.radio.datagram.send(rxdata, size);
+    
+	  // Set radiogroup back
+	  uBit.radio.setGroup(listenerRadioGrouop);
+	}
+    }
+  }
+  else{
+    uBit.display.scroll("?");
+  }
+  return;
 }
 void setXonButtonA(MicroBitEvent)
 {
     locX++;
     locX %= 5;
+  return;
 }
 
 void setYonButtonB(MicroBitEvent)
 {
     locY++;
     locY %= 5;
+  return;
 }
-/*
+
 void onButtonARadioUp(MicroBitEvent)
 {
-    radioGroup++;
-    uBit.radio.setGroup(radioGroup);
-    uBit.display.scroll(radioGroup);
+  //radioGroup++;
+  //uBit.radio.setGroup(radioGroup);
+    uBit.display.scroll(listenerRadioGrouop);
+  return;
 }
 
 void onButtonBRadioDown(MicroBitEvent)
 {
-    radioGroup--;
-    uBit.radio.setGroup(radioGroup);
-    uBit.display.scroll(radioGroup);
-}*/
+  //radioGroup--;
+  //uBit.radio.setGroup(radioGroup);
+    uBit.display.scroll(sendToRadioGroup);
+  return;
+}
 void onButtonAlong(MicroBitEvent)
 {
     setLocation = false;
+  return;
 }
 
 int main()
@@ -91,9 +130,6 @@ int main()
     uBit.radio.enable();
     uBit.radio.setGroup(whoRadioGroup);
     uBit.radio.setTransmitPower(1);
-
-    //Setup a handler to run when data is received.
-    uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
     
     // Setup some button handlers to allow extra control with buttons.
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
@@ -116,8 +152,12 @@ int main()
     uBit.messageBus.ignore(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
     uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
 
-    /*uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
-      uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);*/
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);
+
+    //Setup a handler to run when data is received.
+    uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
+    
     uBit.display.print("+");
 
     // Start trasmitting
@@ -140,14 +180,20 @@ int main()
 	*((int *)(buffer+2)) = ave;
 	*((int *)(buffer+4)) = locY * 256 + locX;
 	*((int *)(buffer+6)) = listenerRadioGrouop;
-	// Send message
-        // Set radiogroup to match recieved who radio group
-	uBit.radio.setGroup(sendToRadioGroup);
-    
-	// Pass on the message
-	uBit.radio.datagram.send(buffer, 8);
-	// Set radiogroup back
-	uBit.radio.setGroup(listenerRadioGrouop);
+	*((int *)buffer+8) = 0x72 * 256 + 0x71;
+	*((int *)buffer+10) = 0x70 * 256 + 0x60;
+
+	if (who == true){
+	  // Set radiogroup to match recieved who radio group
+	  uBit.radio.setGroup(sendToRadioGroup);
+  
+	  // Pass on the message
+	  uBit.radio.datagram.send(buffer, size);
+
+	  // Set radiogroup back
+	  uBit.radio.setGroup(listenerRadioGrouop);
+	}
+	
 	county = 0;
 	ave = 0;
 	}
