@@ -58,62 +58,49 @@ ab.append(pos11)
 ab.append(pos12)
 '''
 while (True):
-  xy = ser.read(12)
+
+  #Read first two bytes to check if in phase
+  n = ser.read(2)
+  while (n[0] != 128 or n[1] != 128):
+    if (n[0] == 128 or n[1] == 128):
+      ser.read(1)
+    n = ser.read(2)
+    print(n[0], end="+", flush=True)
+    print(n[1], end="   ", flush=True)
+  
+  xy = ser.read(6)
   #xy = ab
   print(xy)
-  if (xy.__len__() == 12):
-   #While it has not found an empty value
-   while(posFail != 1):
-     #Keeps iterating if there is no empty value
-     if(xy[pos] == 0x00):
-       pos = (pos + 1) % 12
-       if(lastRead == 1):
-         posFail = 1
-       lastRead = 1
+  if (xy.__len__() == 6):
+    """
+    #While it has not found an empty value
+    while(posFail != 1):
+    #Keeps iterating if there is no empty value
+      if(xy[pos] == 0x00):
+        pos = (pos + 1) % 12
+        if(lastRead == 1):
+          posFail = 1
+          lastRead = 1
      
-     #Otherwise is not 0x80
-     else:
-       lastRead = 0
-       pos = (pos + 1) % 12
+        #Otherwise is not 0x80
+        else:
+          lastRead = 0
+          pos = (pos + 1) % 12
 
-   pos = pos % 12
-   posy = (pos + 1) % 12
-   if (xy[posy] >= 128):
-     newsx = -(32768 * 2 - (xy[posy] * 256 + xy[pos])) / 3
-   else:
-     newsx = (xy[posy] * 256 + xy[pos]) / 3
+    pos = pos % 12
+    posy = (pos + 1) % 12
+    """
 
-   if (xy[(posy+2)%12] >= 128):
-     newsy = -(32768 * 2 - (xy[(posy+2)%12] * 256 + xy[(pos+2)%12])) / 3
-   else:
-     newsy = (xy[(posy+2)%12] * 256 + xy[(pos+2)%12]) / 3
+    #TODO: Get magnitude of the accelerometers and display the data on the graph as one. To discuss
+    #mag = math.sqrt(newsx * newsx + newsy * newsy + newsz * newsz)
+    mag = xy[1] * 256 + xy[0]
+    print(mag)
 
-   if (xy[(posy+4)%12] >= 128):
-     newsz = -(32768 * 2 - (xy[(posy+4)%12] * 256 + xy[(pos+4)%12])) / 3
-   else:
-     newsz = (xy[(posy+4)%12] * 256 + xy[(pos+4)%12]) / 3
+    canvas.create_line(sx, 400 + sy, sx + 1, 400 + mag, fill="blue")
 
-   print(newsy, end=" ", flush=True)
-   print(newsx, end=" ", flush=True)
-   print(newsz, end=" ", flush=True)
-
-   print("\nX position: " + str(newsx))
-   print("Y position " + str(newsy))
-   print("Z position: " + str(newsz))
-
-   #TODO: Get magnitude of the accelerometers and display the data on the graph as one. To discuss
-   mag = math.sqrt(newsx * newsx + newsy * newsy + newsz * newsz)
-   #print(mag)
-
-   canvas.create_line(sx, 400+mag/100, sx+1, 400+magVal/100, fill="blue")
-
-   sx = sx + 1
-   magVal = mag
-   sz = newsx
-   sy = newsy
-   ay = newsz
-   posFail = 0
-   top.update()
-   if (sx > 800):
-     sx = 0
-     canvas.delete("all")
+    sx = sx + 1
+    sy = mag
+    top.update()
+    if (mag > 800):
+      mag = 0
+      canvas.delete("all")
