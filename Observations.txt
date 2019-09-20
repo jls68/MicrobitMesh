@@ -1,0 +1,15 @@
+Author's:
+James Sheaf-Morrison	1314151
+Tamahau Brown		1314934
+
+Report on step 3:
+Observations:
+We noticed as we were on lower power levels (e.g.: 1) it was able to only work at closer ranges, and would only allow us to go out to a small distance (3 meters) before it would lose connection, so the number we assume is outside the radio signal strength's range is -200 (because it would cut out if the number was greater than that).
+
+With higher power levels, e.g.: 7 it would start at -131 and go as low as -180 before losing connection, it would allow us to go as far as other sides of the room before losing connection.
+
+How we tested this was by both configuring to the radio group 24 and set premade message to ensure it was each other, once we established it was just us on the radio group we conducted out experiments and gathered our results which told us about how far the microbits could reach connection before cutting out.
+
+What these results tell us is that there was some difference between the different strength's and the distances of the radio's but it was not reliable as it would give us a signal strength and then once we reached beyond the limit it would cut out. But you could not easily infer a connection between the radio strength and the distance between the MicroBits.
+
+

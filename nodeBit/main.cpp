@@ -68,11 +68,11 @@ void onData(MicroBitEvent)
 
       uBit.display.scroll("hey");
       // Set radiogroup to match recieved who radio group
-      //uBit.radio.setGroup(whoRadioGroup);
-    
-      // Pass on the message
-      uBit.radio.datagram.send(whoSend, size);
-    
+      uBit.radio.setGroup(whoRadioGroup);
+      for(int i = 0; i < 5; i++) {
+      	// Pass on the message
+      	uBit.radio.datagram.send(whoSend, size);
+      }
       // Set radiogroup back
       uBit.radio.setGroup(listenerRadioGrouop);
       uBit.display.scroll("who");
@@ -138,7 +138,7 @@ int main()
     uBit.init();
     uBit.radio.enable();
     uBit.radio.setGroup(whoRadioGroup);
-    uBit.radio.setTransmitPower(1);
+    uBit.radio.setTransmitPower(7);
     
     // Setup some button handlers to allow extra control with buttons.
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
@@ -199,7 +199,7 @@ int main()
 	  // Pass on the message
 	  uBit.radio.datagram.send(buffer, size);
 
-	  uBit.display.scroll("sent");
+	  uBit.display.scroll(">");
 
 	  // Set radiogroup back
 	  uBit.radio.setGroup(listenerRadioGrouop);

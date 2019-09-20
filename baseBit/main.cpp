@@ -6,8 +6,8 @@
 
 MicroBit uBit;
  
-uint8_t radioGroup = 24;
-uint8_t buffer[10];
+uint8_t radioGroup = 29;
+uint8_t buffer[15];
 int locX = 0;
 int locY = 0;
 int accX = 0;
@@ -24,12 +24,14 @@ MicroBitImage clear("0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n0,0,0,0,0\n");
 
 void onData(MicroBitEvent)
 {
-    if(allowConnection == true) {
-    	// Receive data into string
-    	PacketBuffer rxdata = uBit.radio.datagram.recv();
-    	uBit.display.scroll("X");
-    	uBit.serial.send(rxdata);
-    
+    uint8_t rxdata [15]; //uBit.radio.datagram.recv();
+    int dat = uBit.radio.datagram.recv(rxdata, 12);
+    if(rxdata[8] == 0x11 && rxdata[9] == 0x11 &&
+      rxdata[10] == 0x11 && rxdata[11] == 0x11) {
+    	// Receives data and sends to serial
+    		uBit.display.scroll("X");
+    		uBit.serial.send(rxdata, 12);
+    	}
     	// Receive data into byte array buffer and display length
     	//int rxlength = uBit.radio.datagram.recv(buffer, 30);
     	//uBit.display.scroll(rxlength);
@@ -37,8 +39,6 @@ void onData(MicroBitEvent)
     	// Get receive signal strength
     	//uint8_t radioRSSI = uBit.radio.getRSSI();
     	//uBit.display.scroll(radioRSSI);
-    }
-    else {uBit.display.scroll("Y");}
 }
 
 void setXonButtonA(MicroBitEvent)
@@ -73,22 +73,22 @@ void onButtonAlong(MicroBitEvent)
     setLocation = false;
 }
 
-void onButtonBdouble(MicroBitEvent)
-{
-	if(allowConnection == false) {
-     		//uBit.radio.datagram.send("who");
+void onButtonBhold(MicroBitEvent)
+{	
+	//uint8_t buff[15];
 		//Sends the location from the buffer
-		*((int *)buffer) = 0x1 * 256 + 0x1;
-		*((int *)buffer+2) = radioGroup+1;
-		*((int *)buffer+4) = 0x72 * 256 + 0x71;
-		*((int *)buffer+4) = 0x70 * 256 + 0x60;
-		uBit.radio.datagram.send(buffer, 4);
-
-		//radioGroup = radioGroup+1;
-     		uBit.radio.setGroup(radioGroup+1);
 		uBit.display.scroll("who");
+		int groupNum = (radioGroup+1) * 256 + (radioGroup+1);
+		*((int *)buffer) = 0x54 * 256 + 0x01;
+		*((int *)(buffer+2)) = groupNum;
+		*((int *)(buffer+8)) = 0x11 * 256 + 0x11;
+		*((int *)(buffer+10)) = 0x11 * 256 + 0x11;
+		uBit.radio.datagram.send(buffer, 12);
      		allowConnection = true;
-	}
+		//To allow it to send on 29
+		uBit.radio.setGroup(radioGroup+1);
+		return;
+	//}
 }
 
 int main()
@@ -99,8 +99,8 @@ int main()
     uBit.radio.setGroup(radioGroup);
     uBit.radio.setTransmitPower(1);
 
-    	//Setup a handler to run when data is received.
-    	uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
+    //Setup a handler to run when data is received.
+    uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
 
     // Setup some button handlers to allow extra control with buttons.
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
@@ -111,7 +111,7 @@ int main()
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_LONG_CLICK, onButtonBlong);
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_HOLD, onButtonAhold);
     //uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_DOUBLE_CLICK, onButtonAdouble);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_HOLD, onButtonBdouble);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_HOLD, onButtonBhold);
 
     // Set location of microbit
     while (setLocation){
@@ -120,21 +120,17 @@ int main()
       uBit.sleep(100);
     }
 
-	// Switch control of buttons A and B from location setting to radio group setting
-    uBit.messageBus.ignore(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
-    uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
+// Switch control of buttons A and B from location setting to radio group setting
+    //uBit.messageBus.ignore(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, setXonButtonA);
+    //uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, setYonButtonB);
 
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);
+    //uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonARadioUp);
+    //uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBRadioDown);
     uBit.display.print("+");
 
     // Start trasmitting
     for (;;) {
-	//if(allowConnection == true) {
-		//Setup a handler to run when data is received.
-    		//uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
-        //}
-	/*
+	
       	// Get accerlerometer data
 	accX = uBit.accelerometer.getX();
 	accY = uBit.accelerometer.getY();
@@ -148,11 +144,12 @@ int main()
 	*((int *)(buffer+4)) = locY * 256 + locX;
 
       // Send message
-      //uBit.serial.send(buffer,6);
-      //uBit.radio.datagram.send(buffer);
-      */
-      // Wait 0.1 seconds
-      uBit.sleep(100);
+      uBit.serial.send(buffer,12);
+      //uBit.radio.datagram.send(buffer, 12);
+      
+      // Wait 0.5 seconds
+      uBit.sleep(500);
+      //uBit.display.scroll("Y");
     }
     
     release_fiber();

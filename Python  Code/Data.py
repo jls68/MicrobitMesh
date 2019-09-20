@@ -11,7 +11,7 @@ ser.bytesize = 8
 ser.stopbits = 1
 ser.parity = 'N'
 ser.timeout = 5
-ser.port = "/dev/ttyACM0"
+ser.port = "/dev/ttyACM1"
 ser.xonxoff = 0
 ser.rtscts = 0
 ser.open()
@@ -26,7 +26,12 @@ posy = 0
 posFail = 0
 lastRead = 0
 magVal = 0
-modu = 8
+modu = 12
+nodes = [[0,1,2,3,4], [0,1,2,3,4], [0,1,2,3,4], [0,1,2,3,4], [0,1,2,3,4]]
+for i in range(0,5):
+   for j in range (0,5):
+      nodes[i][j] = [0];
+
 '''
 pos1 = 0x54
 pos2 = 0x41
@@ -77,10 +82,11 @@ while (True):
        lastRead = 0
        pos = (pos + 1) % modu
 
-   pos = pos % 8
+   pos = pos % modu
    posy = (pos + 1) % modu
    locX = xy[(pos + 2)%modu] 
-   locY = xy[(pos + 3)%modu] 
+   locY = xy[(pos + 3)%modu]
+
    if (xy[posy] >= 128):
      newsx = -(32768 * 2 - (xy[posy] * 256 + xy[pos])) / 3
    else:
@@ -90,15 +96,24 @@ while (True):
 
    print("\n Mag: " + str(newsx))
    print("\n Location: " + str(locX) + "," + str(locY))
+   #store magnitude for this location
+   if(nodes[locX][locY][0] == 0):
+     nodes[locX][locY][0] = newsx
+   nodes[locX][locY].append(newsx)
 
    #TODO: Get magnitude of the accelerometers and display the data on the graph as one. To discuss
    #mag = math.sqrt(newsx * newsx + newsy * newsy + newsz * newsz)
    #print(mag)
 
-   canvas.create_line(sx, sz, sx+1, newsx, fill="blue")
+   
+   for i in range(0,5):
+      for j in range (0,5):
+         if(len(nodes[i][j]) > 1):
+           print("For location {} , {}, the avg movements were {}".format(i, j, nodes[i][j]))
+           canvas.create_line(sx, nodes[i][j][0]-400+i*200, sx+1, nodes[i][j][-1]-400+i*200, fill="blue")
 
    sx = sx + 1
-   sz = newsx
+   nodes[locX][locY][0] = newsx
    posFail = 0
    top.update()
    if (sx > 800):
